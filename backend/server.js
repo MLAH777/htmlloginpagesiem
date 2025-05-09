@@ -14,16 +14,16 @@ app.use(cors());
 
 // Azure SQL Database configuration
 const config = {
-  server: process.env.DB_SERVER,
+  server: azurethreatdetectionproject-server,
   authentication: {
     type: 'default',
     options: {
-      userName: process.env.DB_USER,
-      password: process.env.DB_PASSWORD,
+      userName: bllvowpspx,
+      password: aTX4jSbrbZttFI$H,
     },
   },
   options: {
-    database: process.env.DB_NAME,
+    database: azurethreatdetectionproject-database,
     encrypt: true,
     trustServerCertificate: false,
     port: 1433,
