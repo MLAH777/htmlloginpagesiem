@@ -7,8 +7,10 @@ const cors = require('cors');
 dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+
+// Define routes here, e.g.:
+app.get('/', (req, res) => {
+  res.send('App is running!');
 });
 
 // Middleware
