@@ -1,5 +1,5 @@
 const express = require('express');
-const { Connection, Request } = require('tedious');
+const mysql = require('mysql2');
 const bcrypt = require('bcrypt');
 const dotenv = require('dotenv');
 const cors = require('cors');
@@ -12,23 +12,17 @@ const port = process.env.PORT || 3000;
 app.use(express.json());
 app.use(cors());
 
-// Azure SQL Database configuration
-const config = {
-  server: azurethreatdetectionproject-server,
-  authentication: {
-    type: 'default',
-    options: {
-      userName: bllvowpspx,
-      password: aTX4jSbrbZttFI$H,
-    },
-  },
-  options: {
-    database: azurethreatdetectionproject-database,
-    encrypt: true,
-    trustServerCertificate: false,
-    port: 1433,
-  },
-};
+// Create MySQL connection
+const db = mysql.createPool({
+  host: process.env.DB_SERVER,       // e.g., azurethreatdetectionproject-server.mysql.database.azure.com
+  user: process.env.DB_USER,         // e.g., bllvowpspx
+  password: process.env.DB_PASSWORD, // your actual password
+  database: process.env.DB_NAME,     // e.g., azurethreatdetectionproject-database
+  port: 3306,
+  ssl: {
+    rejectUnauthorized: true
+  }
+});
 
 // Signup endpoint
 app.post('/api/signup', async (req, res) => {
@@ -41,31 +35,19 @@ app.post('/api/signup', async (req, res) => {
     const saltRounds = 10;
     const passwordHash = await bcrypt.hash(password, saltRounds);
 
-    const connection = new Connection(config);
-    connection.connect((err) => {
+    const insertQuery = 'INSERT INTO Users (Username, PasswordHash) VALUES (?, ?)';
+    db.query(insertQuery, [username, passwordHash], (err, result) => {
       if (err) {
-        console.error('Connection error:', err);
-        return res.status(500).json({ error: 'Database connection failed' });
-      }
-
-      const query = `INSERT INTO Users (Username, PasswordHash) VALUES (@username, @passwordHash)`;
-      const request = new Request(query, (err) => {
-        if (err) {
-          console.error('Query error:', err);
-          if (err.code === 'EREQUEST' && err.message.includes('UNIQUE')) {
-            return res.status(400).json({ error: 'Username already exists' });
-          }
-          return res.status(500).json({ error: 'Signup failed' });
+        if (err.code === 'ER_DUP_ENTRY') {
+          return res.status(400).json({ error: 'Username already exists' });
         }
-        res.status(201).json({ message: 'Signup successful' });
-      });
-
-      request.addParameter('username', TYPES.NVarChar, username);
-      request.addParameter('passwordHash', TYPES.NVarChar, passwordHash);
-      connection.execSql(request);
+        console.error('Insert error:', err);
+        return res.status(500).json({ error: 'Signup failed' });
+      }
+      res.status(201).json({ message: 'Signup successful' });
     });
   } catch (err) {
-    console.error('Error:', err);
+    console.error('Hashing error:', err);
     res.status(500).json({ error: 'Server error' });
   }
 });
@@ -77,36 +59,24 @@ app.post('/api/login', (req, res) => {
     return res.status(400).json({ error: 'Username and password are required' });
   }
 
-  const connection = new Connection(config);
-  connection.connect((err) => {
+  const selectQuery = 'SELECT PasswordHash FROM Users WHERE Username = ?';
+  db.query(selectQuery, [username], (err, results) => {
     if (err) {
-      console.error('Connection error:', err);
-      return res.status(500).json({ error: 'Database connection failed' });
+      console.error('Select error:', err);
+      return res.status(500).json({ error: 'Login failed' });
     }
 
-    const query = `SELECT PasswordHash FROM Users WHERE Username = @username`;
-    const request = new Request(query, (err, rowCount) => {
-      if (err) {
-        console.error('Query error:', err);
-        return res.status(500).json({ error: 'Login failed' });
-      }
-      if (rowCount === 0) {
+    if (results.length === 0) {
+      return res.status(401).json({ error: 'Invalid username or password' });
+    }
+
+    const passwordHash = results[0].PasswordHash;
+    bcrypt.compare(password, passwordHash, (err, match) => {
+      if (err || !match) {
         return res.status(401).json({ error: 'Invalid username or password' });
       }
+      res.json({ message: 'Login successful' });
     });
-
-    request.addParameter('username', TYPES.NVarChar, username);
-    request.on('row', (columns) => {
-      const passwordHash = columns[0].value;
-      bcrypt.compare(password, passwordHash, (err, result) => {
-        if (err || !result) {
-          return res.status(401).json({ error: 'Invalid username or password' });
-        }
-        res.json({ message: 'Login successful' });
-      });
-    });
-
-    connection.execSql(request);
   });
 });
 
