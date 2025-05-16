@@ -1,34 +1,33 @@
-const express = require('express');
-const mysql = require('mysql2');
-const bcrypt = require('bcrypt');
-const dotenv = require('dotenv');
-const cors = require('cors');
-const path = require('path');
+// 1) Load environment variables from .env in DEVELOPMENT
+require('dotenv').config();
 
-dotenv.config();
-const app = express();
+const express = require('express');
+const mysql   = require('mysql2');
+const bcrypt  = require('bcrypt');
+const cors    = require('cors');
+const path    = require('path');
+
+const app  = express();
 const PORT = process.env.PORT || 3000;
 
-// Middleware
+// 2) Serve all static files (HTML/CSS/JS) from this folder (backend/)
+app.use(express.static(path.join(__dirname)));
+
+// 3) JSON body parsing + CORS
 app.use(express.json());
 app.use(cors());
 
-// Serve static files (like home.html, login.html, etc.)
-app.use(express.static(path.join(__dirname, '..')));
-
-// Create MySQL connection
+// 4) Create a MySQL connection pool for Azure MySQL
 const db = mysql.createPool({
-  host: process.env.DB_SERVER,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME,
-  port: 3306,
-  ssl: {
-    rejectUnauthorized: true
-  }
+  host:     process.env.DB_SERVER,   // e.g., azurethreatdetectionproject-server.mysql.database.azure.com
+  user:     process.env.DB_USER,     // e.g., bllvowpspx
+  password: process.env.DB_PASSWORD, // your password
+  database: process.env.DB_NAME,     // e.g., azurethreatdetectionproject-database
+  port:     3306,
+  ssl:      { rejectUnauthorized: true }
 });
 
-// Signup endpoint
+// 5) Signup endpoint
 app.post('/api/signup', async (req, res) => {
   const { username, password } = req.body;
   if (!username || !password) {
@@ -36,8 +35,9 @@ app.post('/api/signup', async (req, res) => {
   }
 
   try {
-    const saltRounds = 10;
+    const saltRounds   = 10;
     const passwordHash = await bcrypt.hash(password, saltRounds);
+
     const insertQuery = 'INSERT INTO Users (Username, PasswordHash) VALUES (?, ?)';
     db.query(insertQuery, [username, passwordHash], (err, result) => {
       if (err) {
@@ -55,7 +55,7 @@ app.post('/api/signup', async (req, res) => {
   }
 });
 
-// Login endpoint
+// 6) Login endpoint
 app.post('/api/login', (req, res) => {
   const { username, password } = req.body;
   if (!username || !password) {
@@ -83,7 +83,7 @@ app.post('/api/login', (req, res) => {
   });
 });
 
-// 👇 This should be at the bottom, only once
+// 7) Always last: start the HTTP server
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
