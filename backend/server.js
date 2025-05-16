@@ -3,26 +3,25 @@ const mysql = require('mysql2');
 const bcrypt = require('bcrypt');
 const dotenv = require('dotenv');
 const cors = require('cors');
+const path = require('path');
 
 dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Define routes here, e.g.:
-app.get('/', (req, res) => {
-  res.send('App is running!');
-});
-
 // Middleware
 app.use(express.json());
 app.use(cors());
 
+// Serve static files (like home.html, login.html, etc.)
+app.use(express.static(path.join(__dirname, '..')));
+
 // Create MySQL connection
 const db = mysql.createPool({
-  host: process.env.DB_SERVER,       // e.g., azurethreatdetectionproject-server.mysql.database.azure.com
-  user: process.env.DB_USER,         // e.g., bllvowpspx
-  password: process.env.DB_PASSWORD, // your actual password
-  database: process.env.DB_NAME,     // e.g., azurethreatdetectionproject-database
+  host: process.env.DB_SERVER,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME,
   port: 3306,
   ssl: {
     rejectUnauthorized: true
@@ -39,7 +38,6 @@ app.post('/api/signup', async (req, res) => {
   try {
     const saltRounds = 10;
     const passwordHash = await bcrypt.hash(password, saltRounds);
-
     const insertQuery = 'INSERT INTO Users (Username, PasswordHash) VALUES (?, ?)';
     db.query(insertQuery, [username, passwordHash], (err, result) => {
       if (err) {
@@ -85,7 +83,7 @@ app.post('/api/login', (req, res) => {
   });
 });
 
-// Start server
-app.listen(port, () => {
-  console.log(`Server running on port ${port}`);
+// 👇 This should be at the bottom, only once
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
 });
