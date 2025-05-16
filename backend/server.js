@@ -83,6 +83,11 @@ app.post('/api/login', (req, res) => {
   });
 });
 
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "login.html"));
+});
+
+
 // 7) Always last: start the HTTP server
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
