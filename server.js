@@ -1,6 +1,3 @@
-// 1) Load environment variables from .env in DEVELOPMENT
-require('dotenv').config();
-
 const express = require('express');
 const mysql   = require('mysql2');
 const bcrypt  = require('bcrypt');
@@ -10,85 +7,76 @@ const path    = require('path');
 const app  = express();
 const PORT = process.env.PORT || 3000;
 
-// 2) Serve all static files (HTML/CSS/JS) from this folder (backend/)
+// Serve static files (HTML/CSS/JS)
 app.use(express.static(path.join(__dirname)));
 
-// 3) JSON body parsing + CORS
+// JSON parsing + CORS
 app.use(express.json());
 app.use(cors());
 
-// 4) Create a MySQL connection pool for Azure MySQL
+// MySQL Azure connection
 const db = mysql.createPool({
-  host:     process.env.DB_SERVER,   // e.g., azurethreatdetectionproject-server.mysql.database.azure.com
-  user:     process.env.DB_USER,     // e.g., bllvowpspx
-  password: process.env.DB_PASSWORD, // your password
-  database: process.env.DB_NAME,     // e.g., azurethreatdetectionproject-database
+  host:     process.env.DB_SERVER,
+  user:     process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME,
   port:     3306,
   ssl:      { rejectUnauthorized: true }
 });
 
-// 5) Signup endpoint
+// Signup route
 app.post('/api/signup', async (req, res) => {
   const { username, password } = req.body;
-  if (!username || !password) {
+  if (!username || !password)
     return res.status(400).json({ error: 'Username and password are required' });
-  }
 
   try {
-    const saltRounds   = 10;
-    const passwordHash = await bcrypt.hash(password, saltRounds);
-
-    const insertQuery = 'INSERT INTO Users (Username, PasswordHash) VALUES (?, ?)';
-    db.query(insertQuery, [username, passwordHash], (err, result) => {
-      if (err) {
-        if (err.code === 'ER_DUP_ENTRY') {
-          return res.status(400).json({ error: 'Username already exists' });
+    const hash = await bcrypt.hash(password, 10);
+    db.query(
+      'INSERT INTO Users (Username, PasswordHash) VALUES (?, ?)',
+      [username, hash],
+      (err) => {
+        if (err) {
+          if (err.code === 'ER_DUP_ENTRY')
+            return res.status(400).json({ error: 'Username already exists' });
+          return res.status(500).json({ error: 'Signup failed' });
         }
-        console.error('Insert error:', err);
-        return res.status(500).json({ error: 'Signup failed' });
+        res.status(201).json({ message: 'Signup successful' });
       }
-      res.status(201).json({ message: 'Signup successful' });
-    });
-  } catch (err) {
-    console.error('Hashing error:', err);
+    );
+  } catch {
     res.status(500).json({ error: 'Server error' });
   }
 });
 
-// 6) Login endpoint
+// Login route
 app.post('/api/login', (req, res) => {
   const { username, password } = req.body;
-  if (!username || !password) {
+  if (!username || !password)
     return res.status(400).json({ error: 'Username and password are required' });
-  }
 
-  const selectQuery = 'SELECT PasswordHash FROM Users WHERE Username = ?';
-  db.query(selectQuery, [username], (err, results) => {
-    if (err) {
-      console.error('Select error:', err);
-      return res.status(500).json({ error: 'Login failed' });
+  db.query(
+    'SELECT PasswordHash FROM Users WHERE Username = ?',
+    [username],
+    (err, results) => {
+      if (err) return res.status(500).json({ error: 'Login failed' });
+      if (!results.length) return res.status(401).json({ error: 'Invalid username or password' });
+
+      bcrypt.compare(password, results[0].PasswordHash, (err, match) => {
+        if (err || !match)
+          return res.status(401).json({ error: 'Invalid username or password' });
+        res.json({ message: 'Login successful' });
+      });
     }
-
-    if (results.length === 0) {
-      return res.status(401).json({ error: 'Invalid username or password' });
-    }
-
-    const passwordHash = results[0].PasswordHash;
-    bcrypt.compare(password, passwordHash, (err, match) => {
-      if (err || !match) {
-        return res.status(401).json({ error: 'Invalid username or password' });
-      }
-      res.json({ message: 'Login successful' });
-    });
-  });
+  );
 });
 
-app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "login.html"));
+// Serve login page
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'login.html'));
 });
 
-
-// 7) Always last: start the HTTP server
+// Start server
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
