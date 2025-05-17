@@ -17,5 +17,7 @@
     "node": ">=16.x"
   },
   "author": "your-name",
-  "license": "ISC"
+  "license": "ISC",
+  "devDependencies": {},
+  "keywords": []
 }
