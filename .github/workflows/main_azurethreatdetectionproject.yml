@@ -25,15 +25,12 @@ jobs:
 
       - name: Install dependencies and build app
         run: |
-          cd backend
           npm install
           npm run build --if-present
           echo "Skipping tests as none are defined"
 
       - name: Zip artifact for deployment
-        run: |
-          cd backend
-          zip -r ../release.zip .
+        run: zip -r release.zip .
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
