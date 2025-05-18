@@ -1,11 +1,10 @@
-// script.js
 document.addEventListener('DOMContentLoaded', () => {
     // Signup form
     const signupForm = document.getElementById('signupForm');
     if (signupForm) {
       signupForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const username = document.getElementById('username').value;
+        const username = document.getElementById('newUsername').value; // FIXED HERE
         const password = document.getElementById('newPassword').value;
         const confirmPassword = document.getElementById('confirmPassword').value;
   
@@ -33,7 +32,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       });
     }
-  
+
     // Login form
     const loginForm = document.getElementById('loginForm');
     if (loginForm) {
@@ -61,4 +60,4 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       });
     }
-  });
+});
