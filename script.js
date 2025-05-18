@@ -31,7 +31,7 @@ document.addEventListener('DOMContentLoaded', () => {
           alert('Signup successful! Please login.');
           window.location.href = 'login.html';
         } else {
-          console.error('Signup error:', data);
+          console.error('Signup Error:', data);
           alert(data.error || 'Signup failed.');
         }
       } catch (err) {
