@@ -41,29 +41,39 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Login form with unsafe XSS test handling
+  // Login form
   const loginForm = document.getElementById('loginForm');
   if (loginForm) {
-    loginForm.addEventListener('submit', (e) => {
+    loginForm.addEventListener('submit', async (e) => {
       e.preventDefault();
-      const username = document.getElementById('username').value;
+      const username = document.getElementById('username').value.trim();
       const password = document.getElementById('password').value;
 
-      if (!username) {
-        alert('Username is required.');
+      if (!username || !password) {
+        alert('Both username and password are required.');
         return;
       }
 
-      // Simulate reflected XSS by inserting username unsafely
-      const container = document.querySelector('.container');
-      const resultBox = document.createElement('div');
-      resultBox.innerHTML = `<p>Welcome, ${username}</p>`; // 🚨 XSS Injection Point
-      resultBox.style.color = 'red';
-      resultBox.style.fontWeight = 'bold';
-      container.appendChild(resultBox);
+      try {
+        const response = await fetch('/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password }),
+        });
 
-      // Fake login flow (you can remove this or keep it as simulation)
-      // alert('Login simulated.'); // Optional
+        const data = await response.json();
+
+        if (response.ok) {
+          alert('Login successful!');
+          window.location.href = 'home.html';
+        } else {
+          console.error('Login error:', data);
+          alert(data.error || 'Login failed.');
+        }
+      } catch (err) {
+        console.error('Network/Fetch error during login:', err);
+        alert('Error during login. Please try again.');
+      }
     });
   }
 });
