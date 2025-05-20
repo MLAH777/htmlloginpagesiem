@@ -4,14 +4,12 @@ document.addEventListener('DOMContentLoaded', () => {
   if (signupForm) {
     signupForm.addEventListener('submit', async (e) => {
       e.preventDefault();
-      const username = document.getElementById('newUsername').value.trim();
+      const username = document.getElementById('newUsername').value;
       const password = document.getElementById('newPassword').value;
       const confirmPassword = document.getElementById('confirmPassword').value;
 
-      if (!username || !password || !confirmPassword) {
-        alert('All fields are required.');
-        return;
-      }
+      // Removed: if (!username || !password || !confirmPassword)
+      // Allowing empty values to pass through to backend
 
       if (password !== confirmPassword) {
         alert('Passwords do not match!');
@@ -46,13 +44,11 @@ document.addEventListener('DOMContentLoaded', () => {
   if (loginForm) {
     loginForm.addEventListener('submit', async (e) => {
       e.preventDefault();
-      const username = document.getElementById('username').value.trim();
+      const username = document.getElementById('username').value;
       const password = document.getElementById('password').value;
 
-      if (!username || !password) {
-        alert('Both username and password are required.');
-        return;
-      }
+      // Removed: if (!username || !password)
+      // Allowing empty or SQL injection inputs
 
       try {
         const response = await fetch('/api/login', {
