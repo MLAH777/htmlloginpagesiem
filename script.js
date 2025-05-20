@@ -8,14 +8,6 @@ document.addEventListener('DOMContentLoaded', () => {
       const password = document.getElementById('newPassword').value;
       const confirmPassword = document.getElementById('confirmPassword').value;
 
-      // Removed: if (!username || !password || !confirmPassword)
-      // Allowing empty values to pass through to backend
-
-      if (password !== confirmPassword) {
-        alert('Passwords do not match!');
-        return;
-      }
-
       try {
         const response = await fetch('/api/signup', {
           method: 'POST',
@@ -46,9 +38,6 @@ document.addEventListener('DOMContentLoaded', () => {
       e.preventDefault();
       const username = document.getElementById('username').value;
       const password = document.getElementById('password').value;
-
-      // Removed: if (!username || !password)
-      // Allowing empty or SQL injection inputs
 
       try {
         const response = await fetch('/api/login', {
